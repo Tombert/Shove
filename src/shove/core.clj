@@ -5,7 +5,7 @@
    [fn-fx.controls :as ui]
    [shove.kafkalib :as kafka]
    )
-  )
+  (:gen-class))
 
 
 
