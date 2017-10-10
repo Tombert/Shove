@@ -8,8 +8,11 @@
                  [org.apache.kafka/kafka_2.9.2 "0.8.1.1" :exclusions [javax.jms/jms
                                                                       com.sun.jdmk/jmxtools
                                                                       com.sun.jmx/jmxri]]
-                 [org.clojure/data.csv "0.1.3"]]
+                 ]
   :main shove.core
   :aot [shove.core]
   :target-path "target/%s"
-  :profiles {:uberjar {:aot :all}})
+ ; :profiles {:uberjar {:aot :all}}
+  
+  
+  )
