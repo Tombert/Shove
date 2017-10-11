@@ -2,22 +2,20 @@
   (:require
    [fn-fx.fx-dom :as dom]
    [fn-fx.diff :refer [component defui render]]
+   [fn-fx.controls :as controls]
    [fn-fx.controls :as ui]
    [shove.kafkalib :as kafka]
    )
   (:gen-class))
 
+(def state (atom {:brokers [] :add-broker false}))
 
-
-
-(def firebrick
-  (ui/color :red 0.69 :green 0.13 :blue 0.13))
 
 
 ;; The main login window component, notice the authed? parameter, this defines a function
 ;; we can use to construct these ui components, named "login-form"
 (defui LoginWindow
-  (render [this {:keys [authed?]}]
+  (render [this {:keys [add-broker brokers]}]
     (ui/grid-pane
       :alignment :center
       :hgap 10
@@ -43,10 +41,36 @@
                    :grid-pane/column-index 0
                    :grid-pane/row-index 1)
 
-                 (ui/text-field
-                   :id :broker-field
-                   :grid-pane/column-index 1
-                   :grid-pane/row-index 1)
+                   
+                   (if add-broker 
+                   (ui/h-box 
+                     :spacing 10
+                     :alignment :bottom-left
+                     :children [(ui/text-field 
+                       :id :new-broker-field
+                     
+                     ) (ui/button :text "Done"
+                                  :on-action {:event :done-add-broker
+                                              :fn-fx/include {:new-broker-field #{:text}
+}})]
+                     :grid-pane/column-index 1
+                     :grid-pane/row-index 1
+                     
+                     )
+                   (ui/h-box
+                     :spacing 10
+                     :alignment :bottom-left
+                     :children [
+                               (ui/combo-box
+                               :id :broker-field
+                               :items brokers
+                               :grid-pane/column-index 1
+                               :grid-pane/row-index 1)
+                                (ui/button :text "Add Broker"
+                                  :on-action {:event :add-broker
+                                              :fn-fx/include {}})]
+                     :grid-pane/column-index 1
+                     :grid-pane/row-index 1))
 
                  (ui/label :text "Topic: "
                    :grid-pane/column-index 0
@@ -76,20 +100,22 @@
                  (ui/h-box
                    :spacing 10
                    :alignment :bottom-right
-                   :children [(ui/button :text "Submit"
+                   :children [
+                              (controls/button
+                                      :text "Import CSV"
+                                      :on-action {:event :import-csv
+                                                  :fn-fx/include {:fn-fx/event #{:target}}})
+                              
+                              (controls/button :text "Submit"
                                 :on-action {:event :auth
-                                            :fn-fx/include {:broker-field #{:text}
+                                            :fn-fx/include {:broker-field #{:value}
                                                             :content-field #{:text}
                                                             :key-field #{:text}
                                                             :topic-field #{:text}}})]
                    :grid-pane/column-index 1
                    :grid-pane/row-index 5)
 
-                 (ui/text
-                   :text (if authed? "Sign in was pressed" "")
-                   :fill firebrick
-                   :grid-pane/column-index 1
-                   :grid-pane/row-index 6)])))
+                 ])))
 
 ;; Wrap our login form in a stage/scene, and create a "stage" function
 (defui Stage
@@ -107,26 +133,32 @@
 
 
 (defn handler-fn [{:keys [event] :as all-data}]
-                     (println "\n\n\n\n\n\n\n\nUI Event\n\n\n\n\n\n" (str all-data))
-                     (case event
-                       :auth (let [
-                                   
-                                   {{ {kf :text} :key-field {bf :text} :broker-field {tf :text} :topic-field {cf :text} :content-field} :fn-fx/includes} all-data
-                                   producer (kafka/create-producer bf)
-                             ] (do (println "Data" kf bf tf) (try (kafka/send-to-producer producer tf kf cf) (catch Exception e (println "Caught Exception: " (.getMessage e) ) )))
+     (println "\n\n\n\n\n\n\n\nUI Event\n\n" (str all-data) "State " (str @state))
+     (case event
+       :done-add-broker 
+          (let [
+                {{{nbf :text} :new-broker-field} :fn-fx/includes} all-data
+                {brokers :brokers} @state
+
+                ] 
+            (println "nbf" nbf)
+            (swap! state assoc :add-broker false :brokers (conj brokers nbf)))
+       :add-broker (swap! state assoc :add-broker true)
+       :auth (let [
+                   
+                   {{ {kf :text} :key-field {bf :value} :broker-field {tf :text} :topic-field {cf :text} :content-field} :fn-fx/includes} all-data
+                   producer (kafka/create-producer bf)
+             ] (do (println "Data" kf bf tf) (try (kafka/send-to-producer producer tf kf cf) (catch Exception e (println "Caught Exception: " (.getMessage e) ) )))
                        (println "Unknown UI event \n\n\n\n\n\n" event all-data))))
 
 (defn -main []
   (let [;; Data State holds the business logic of our app
-        data-state (atom {:authed? false})
-
-        ;; handler-fn handles events from the ui and updates the data state
 
         ;; ui-state holds the most recent state of the ui
-        ui-state (agent (dom/app (stage @data-state) handler-fn))]
+        ui-state (agent (dom/app (stage @state) handler-fn))]
 
     ;; Every time the data-state changes, queue up an update of the UI
-    (add-watch data-state :ui (fn [_ _ _ _]
+    (add-watch state :ui (fn [_ _ _ _]
                                 (send ui-state
                                       (fn [old-ui]
-                                        (dom/update-app old-ui (stage @data-state))))))))
+                                        (dom/update-app old-ui (stage @state))))))))
