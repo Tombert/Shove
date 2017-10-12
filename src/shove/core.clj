@@ -102,10 +102,6 @@
                    :spacing 10
                    :alignment :bottom-right
                    :children [
-                              (controls/button
-                                      :text "Import CSV"
-                                      :on-action {:event :import-csv
-                                                  :fn-fx/include {:fn-fx/event #{:target}}})
                               
                               (controls/button :text "Submit"
                                 :on-action {:event :auth
@@ -145,6 +141,8 @@
             (swap! state assoc :add-broker false :brokers finalBrokers)
             (spit brokerfile brokerStr))
        :add-broker (swap! state assoc :add-broker true)
+       :import-csv 
+           (println "blah")
        :auth (let [
                    ;; Extracts out the fields from the big object that JavaFX gives us
                    ;; TODO: This is uglier than it should be, might break up to multiple lines
@@ -157,7 +155,9 @@
                    ;; { "mybroker" {"mytopic" producer}}
                    producer (kafka/create-producer bf)
 
-             ] (do (println "Data" kf bf tf) (try (kafka/send-to-producer producer tf kf cf) (catch Exception e (println "Caught Exception: " (.getMessage e) ) )))
+             ] 
+               
+               (do (println "Data" kf bf tf) (try (kafka/send-to-producer producer tf kf cf) (catch Exception e (println "Caught Exception: " (.getMessage e) ) )))
                        (println "Unknown UI event" event all-data))))
 
 (defn -main []
