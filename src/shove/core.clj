@@ -111,9 +111,9 @@
                    :spacing 10
                    :alignment :bottom-right
                    :children [
-                        (ui/button :text "Import CSV"
-                          :on-action {:event :import-csv
-                                      :fn-fx/include {:fn-fx/event #{:target}}})
+                        ;(ui/button :text "Import CSV"
+                        ;  :on-action {:event :import-csv
+                        ;              :fn-fx/include {:fn-fx/event #{:target}}})
                               (controls/button :text "Submit"
                                 :on-action {:event :auth
                                             :fn-fx/include {:broker-field #{:value}
@@ -149,10 +149,11 @@
                 {{{nbf :text} :new-broker-field} :fn-fx/includes} all-data
                 {brokers :brokers} @state
 
-                finalBrokers (-> brokers 
+                sortedBrokers (-> brokers 
                                  (conj nbf) 
                                  distinct
                                  sort)
+                finalBrokers (filter (fn [x] (not= x "")) sortedBrokers )
                 brokerStr (str/join "\n" finalBrokers)
                ] 
             (swap! state assoc :add-broker false :brokers finalBrokers)
@@ -191,6 +192,7 @@
                        (println "Unknown UI event" event all-data))))
 
 (defn -main []
+  (spit brokerfile "" :append true)
   (let [;; Data State holds the business logic of our app
 
         ;; Grab the initial list of brokers
