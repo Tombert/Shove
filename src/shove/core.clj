@@ -4,6 +4,7 @@
    [fn-fx.diff :refer [component defui render]]
    [fn-fx.controls :as controls]
    [fn-fx.controls :as ui]
+   [clojure.data.json :as json]
    [clojure.data.csv :as csv]   
    [fn-fx.util :as util]
    [clojure.string :as str]
@@ -133,13 +134,13 @@
                  :scene (ui/scene
                           :root (login-window args)))))
 
-; (defn csv-data->maps [csv-data]
-;   (println "Yo")
-;   (map zipmap
-;        (->> (first csv-data) ;; First row is the header
-;             (map keyword) ;; Drop if you want string keys instead
-;             repeat)
-; 	  (rest csv-data)))
+(defn csv-data->maps [csv-data]
+  (println "Yo")
+  (map zipmap
+       (->> (first csv-data) ;; First row is the header
+            (map keyword) ;; Drop if you want string keys instead
+            repeat)
+	  (rest csv-data)))
 
 (defn handler-fn [{:keys [event] :as all-data}]
      (case event
@@ -167,7 +168,7 @@
                  mdata (csv-data->maps data)
                  ]
 
-             (doall (map #(println (str %2 ": " %1)) mdata (range)))
+             (doall (map #(println (str (json/write-str %1))) mdata ))
              
                  
              ) 
