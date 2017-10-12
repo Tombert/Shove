@@ -4,14 +4,15 @@
    [fn-fx.diff :refer [component defui render]]
    [fn-fx.controls :as controls]
    [fn-fx.controls :as ui]
+   [clojure.string :as str]
    [shove.kafkalib :as kafka]
-   )
-  (:gen-class))
+  ) (:gen-class))
 
 (def state (atom {:brokers [] :add-broker false}))
 
+(def homedir (System/getProperty "user.home"))
 
-
+(def brokerfile (str homedir "/.brokerlist.txt"))
 ;; The main login window component, notice the authed? parameter, this defines a function
 ;; we can use to construct these ui components, named "login-form"
 (defui LoginWindow
@@ -126,11 +127,6 @@
                  :scene (ui/scene
                           :root (login-window args)))))
 
-;(def b (agent (dom/app  (stage))))
-;(send b
-;      (fn [old-ui]
-;        (dom/update-app old-ui (stage Stage))))
-
 
 (defn handler-fn [{:keys [event] :as all-data}]
      (println "\n\n\n\n\n\n\n\nUI Event\n\n" (str all-data) "State " (str @state))
@@ -140,25 +136,49 @@
                 {{{nbf :text} :new-broker-field} :fn-fx/includes} all-data
                 {brokers :brokers} @state
 
-                ] 
-            (println "nbf" nbf)
-            (swap! state assoc :add-broker false :brokers (conj brokers nbf)))
+                finalBrokers (-> brokers 
+                                 (conj nbf) 
+                                 distinct
+                                 sort)
+                brokerStr (str/join "\n" finalBrokers)
+               ] 
+            (swap! state assoc :add-broker false :brokers finalBrokers)
+            (spit brokerfile brokerStr))
        :add-broker (swap! state assoc :add-broker true)
        :auth (let [
-                   
-                   {{ {kf :text} :key-field {bf :value} :broker-field {tf :text} :topic-field {cf :text} :content-field} :fn-fx/includes} all-data
+                   ;; Extracts out the fields from the big object that JavaFX gives us
+                   ;; TODO: This is uglier than it should be, might break up to multiple lines
+                   {{{kf :text} :key-field {bf :value} :broker-field {tf :text} :topic-field {cf :text} :content-field} :fn-fx/includes} all-data
+
+
+                   ;; Creates a basic producer so that we can shove into kafka.  
+                   ;; I'd like to cache this to RAM, since it does this upon every insert, but I'd 
+                   ;; need to deal with deal with updates.  Maybe store in map like 
+                   ;; { "mybroker" {"mytopic" producer}}
                    producer (kafka/create-producer bf)
+
              ] (do (println "Data" kf bf tf) (try (kafka/send-to-producer producer tf kf cf) (catch Exception e (println "Caught Exception: " (.getMessage e) ) )))
-                       (println "Unknown UI event \n\n\n\n\n\n" event all-data))))
+                       (println "Unknown UI event" event all-data))))
 
 (defn -main []
   (let [;; Data State holds the business logic of our app
 
+        ;; Grab the initial list of brokers
+        brokerlist (->
+                       (slurp brokerfile)
+                       (str/split #"\n")
+                   )
+
         ;; ui-state holds the most recent state of the ui
         ui-state (agent (dom/app (stage @state) handler-fn))]
+    
 
     ;; Every time the data-state changes, queue up an update of the UI
     (add-watch state :ui (fn [_ _ _ _]
                                 (send ui-state
                                       (fn [old-ui]
-                                        (dom/update-app old-ui (stage @state))))))))
+                                        (dom/update-app old-ui (stage @state))))))
+
+    ;; Load up the state with the inital list of brokers
+    (swap! state assoc :brokers brokerlist)
+    ))
