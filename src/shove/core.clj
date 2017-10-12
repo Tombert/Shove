@@ -4,9 +4,16 @@
    [fn-fx.diff :refer [component defui render]]
    [fn-fx.controls :as controls]
    [fn-fx.controls :as ui]
+   [clojure.data.csv :as csv]   
+   [fn-fx.util :as util]
    [clojure.string :as str]
    [shove.kafkalib :as kafka]
-  ) (:gen-class))
+   [clojure.java.io :as io]
+  )
+  (:import (javafx.stage FileChooser)
+           (javafx.scene.chart.XYChart)
+           (javafx.beans.property ReadOnlyObjectWrapper))
+  (:gen-class))
 
 (def state (atom {:brokers [] :add-broker false}))
 
@@ -50,10 +57,10 @@
                      :children [(ui/text-field 
                        :id :new-broker-field
                      
-                     ) (ui/button :text "Done"
-                                  :on-action {:event :done-add-broker
-                                              :fn-fx/include {:new-broker-field #{:text}
-}})]
+                     ) 
+                        (ui/button :text "Done"
+                          :on-action {:event :done-add-broker
+                                      :fn-fx/include {:new-broker-field #{:text}}})]
                      :grid-pane/column-index 1
                      :grid-pane/row-index 1
                      
@@ -62,6 +69,7 @@
                      :spacing 10
                      :alignment :bottom-left
                      :children [
+
                                (ui/combo-box
                                :id :broker-field
                                :items brokers
@@ -102,7 +110,9 @@
                    :spacing 10
                    :alignment :bottom-right
                    :children [
-                              
+                        (ui/button :text "Import CSV"
+                          :on-action {:event :import-csv
+                                      :fn-fx/include {:fn-fx/event #{:target}}})
                               (controls/button :text "Submit"
                                 :on-action {:event :auth
                                             :fn-fx/include {:broker-field #{:value}
@@ -123,9 +133,15 @@
                  :scene (ui/scene
                           :root (login-window args)))))
 
+; (defn csv-data->maps [csv-data]
+;   (println "Yo")
+;   (map zipmap
+;        (->> (first csv-data) ;; First row is the header
+;             (map keyword) ;; Drop if you want string keys instead
+;             repeat)
+; 	  (rest csv-data)))
 
 (defn handler-fn [{:keys [event] :as all-data}]
-     (println "\n\n\n\n\n\n\n\nUI Event\n\n" (str all-data) "State " (str @state))
      (case event
        :done-add-broker 
           (let [
@@ -141,8 +157,21 @@
             (swap! state assoc :add-broker false :brokers finalBrokers)
             (spit brokerfile brokerStr))
        :add-broker (swap! state assoc :add-broker true)
-       :import-csv 
-           (println "blah")
+       :import-csv
+           (let [
+                 {includes :fn-fx/includes}  all-data
+                 window (.getWindow (.getScene (:target (:fn-fx/event includes))))
+                 dialog (doto (FileChooser.) (.setTitle "Import CSV"))
+                 file (util/run-and-wait (.showOpenDialog dialog window))
+                 data (with-open [reader (io/reader file)] (doall (csv/read-csv reader)))
+                 mdata (csv-data->maps data)
+                 ]
+
+             (doall (map #(println (str %2 ": " %1)) mdata (range)))
+             
+                 
+             ) 
+           
        :auth (let [
                    ;; Extracts out the fields from the big object that JavaFX gives us
                    ;; TODO: This is uglier than it should be, might break up to multiple lines

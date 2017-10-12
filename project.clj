@@ -5,6 +5,7 @@
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.8.0"]
                  [halgari/fn-fx "0.4.0"]
+                 [org.clojure/data.csv "0.1.4"]
                  [org.apache.kafka/kafka_2.9.2 "0.8.1.1" :exclusions [javax.jms/jms
                                                                       com.sun.jdmk/jmxtools
                                                                       com.sun.jmx/jmxri]]
