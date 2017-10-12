@@ -174,10 +174,11 @@
     
 
     ;; Every time the data-state changes, queue up an update of the UI
-    (add-watch state :ui (fn [_ _ _ _]
-                                (send ui-state
-                                      (fn [old-ui]
-                                        (dom/update-app old-ui (stage @state))))))
+    (add-watch state :ui 
+        (fn [_ _ _ _]
+            (send ui-state
+                (fn [old-ui]
+                  (dom/update-app old-ui (stage @state))))))
 
     ;; Load up the state with the inital list of brokers
     (swap! state assoc :brokers brokerlist)
