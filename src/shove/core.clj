@@ -162,10 +162,11 @@
                 {{{nbf :text} :new-broker-field} :fn-fx/includes} all-data
                 {brokers :brokers} @state
 
-                finalBrokers (-> brokers 
+                sortedBrokers (-> brokers 
                                  (conj nbf) 
                                  distinct
                                  sort)
+                finalBrokers (filter (fn [x] (not= x "")) sortedBrokers )
                 brokerStr (str/join "\n" finalBrokers)
                ] 
             (swap! state assoc :add-broker false :brokers finalBrokers)
@@ -202,6 +203,7 @@
                        (println "Unknown UI event" event all-data))))
 
 (defn -main []
+  (spit brokerfile "" :append true)
   (let [;; Data State holds the business logic of our app
 
         ;; Grab the initial list of brokers
