@@ -78,7 +78,13 @@
                                :grid-pane/row-index 1)
                                 (ui/button :text "Add Broker"
                                   :on-action {:event :add-broker
-                                              :fn-fx/include {}})]
+                                              :fn-fx/include {}})
+                                
+                                (ui/button :text "Delete Broker"
+                                  :on-action {:event :delete-broker
+                                              :fn-fx/include 
+                                                 {:broker-field #{:value}}})
+                                ]
                      :grid-pane/column-index 1
                      :grid-pane/row-index 1))
 
@@ -172,6 +178,20 @@
             (swap! state assoc :add-broker false :brokers finalBrokers)
             (spit brokerfile brokerStr))
        :add-broker (swap! state assoc :add-broker true)
+       :delete-broker
+           (do (println "Howdy" (str all-data))
+           (let [
+                 
+                    {{{nbf :value} :broker-field} :fn-fx/includes} all-data
+                    {brokers :brokers} @state
+                    finalBrokers (filter (fn [x] (println x) (not= x nbf)) brokers)
+                    brokerStr (str/join "\n" finalBrokers)
+                 ]
+                (println "Thing" (str nbf))
+                (swap! state assoc :brokers finalBrokers)
+                (spit brokerfile brokerStr)             
+             ))
+
        :import-csv
            (let [
                  {includes :fn-fx/includes}  all-data
