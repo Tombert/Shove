@@ -113,7 +113,11 @@
                    :children [
                         (ui/button :text "Import CSV"
                           :on-action {:event :import-csv
-                                      :fn-fx/include {:fn-fx/event #{:target}}})
+                                      :fn-fx/include {
+                                                      :broker-field #{:value}
+                                                      :fn-fx/event #{:target}
+                                                      :topic-field #{:text}
+                                                      }})
                               (controls/button :text "Submit"
                                 :on-action {:event :auth
                                             :fn-fx/include {:broker-field #{:value}
@@ -135,12 +139,21 @@
                           :root (login-window args)))))
 
 (defn csv-data->maps [csv-data]
-  (println "Yo")
   (map zipmap
        (->> (first csv-data) ;; First row is the header
             (map keyword) ;; Drop if you want string keys instead
             repeat)
 	  (rest csv-data)))
+
+(defn sendMessage [broker topic k value]
+  (println "Stuff: " (str broker topic k value))
+  (let [
+        producer (kafka/create-producer broker)
+       ]
+    (try (kafka/send-to-producer producer topic k value) (catch Exception e (println "Caught Exception: " (.getMessage e))))
+    )
+  
+  )
 
 (defn handler-fn [{:keys [event] :as all-data}]
      (case event
@@ -161,14 +174,18 @@
        :import-csv
            (let [
                  {includes :fn-fx/includes}  all-data
+                 {{bf :value } :broker-field {tf :text} :topic-field} includes
                  window (.getWindow (.getScene (:target (:fn-fx/event includes))))
                  dialog (doto (FileChooser.) (.setTitle "Import CSV"))
                  file (util/run-and-wait (.showOpenDialog dialog window))
                  data (with-open [reader (io/reader file)] (doall (csv/read-csv reader)))
                  mdata (csv-data->maps data)
-                 ]
+                 jsonstuff (map #(json/write-str %1) mdata )
 
-             (doall (map #(println (str (json/write-str %1))) mdata ))
+                 ]
+                 (doall (map #(sendMessage bf tf (str (java.util.UUID/randomUUID)) %1) jsonstuff))
+
+             
              
                  
              ) 
@@ -178,16 +195,10 @@
                    ;; TODO: This is uglier than it should be, might break up to multiple lines
                    {{{kf :text} :key-field {bf :value} :broker-field {tf :text} :topic-field {cf :text} :content-field} :fn-fx/includes} all-data
 
-
-                   ;; Creates a basic producer so that we can shove into kafka.  
-                   ;; I'd like to cache this to RAM, since it does this upon every insert, but I'd 
-                   ;; need to deal with deal with updates.  Maybe store in map like 
-                   ;; { "mybroker" {"mytopic" producer}}
-                   producer (kafka/create-producer bf)
-
              ] 
+               (sendMessage bf tf kf cf) 
                
-               (do (println "Data" kf bf tf) (try (kafka/send-to-producer producer tf kf cf) (catch Exception e (println "Caught Exception: " (.getMessage e) ) )))
+               
                        (println "Unknown UI event" event all-data))))
 
 (defn -main []
