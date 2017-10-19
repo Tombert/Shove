@@ -33,7 +33,7 @@
                  :bottom 25
                  :left 2
                  :right 2
-                 :top 25)
+                 :top 2)
       :tabs [
                   (ui/tab 
                     :text "Shove Content"
@@ -138,7 +138,34 @@
                    :grid-pane/column-index 1
                    :grid-pane/row-index 5)
 
-                 ]))])))
+                 ]))
+                 (ui/tab 
+                   :text "CSV"
+                   :content 
+                      (ui/grid-pane
+                        :hgap 10
+                        :vgap 10
+                          :padding (ui/insets
+                         :bottom 25
+                         :left 2
+                         :right 2
+                         :top 25)
+                         :children [
+                                     
+                        (ui/button :text "Import CSV"
+                          :on-action {:event :import-csv
+                                      :fn-fx/include {
+                                                      :broker-field #{:value}
+                                                      :fn-fx/event #{:target}
+                                                      :topic-field #{:text}
+                                     }})
+                                    ]
+                   
+                   ))
+
+
+
+])))
 
 ;; Wrap our login form in a stage/scene, and create a "stage" function
 (defui Stage
