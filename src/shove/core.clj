@@ -21,6 +21,12 @@
 (def homedir (System/getProperty "user.home"))
 
 (def brokerfile (str homedir "/.brokerlist.txt"))
+
+(def insets (ui/insets
+                 :bottom 25
+                 :left 2
+                 :right 2
+                 :top 2))
 ;; The main login window component, notice the authed? parameter, this defines a function
 ;; we can use to construct these ui components, named "login-form"
 (defui LoginWindow
@@ -29,11 +35,7 @@
       :alignment :center
       :hgap 10
       :vgap 10
-      :padding (ui/insets
-                 :bottom 25
-                 :left 2
-                 :right 2
-                 :top 2)
+      :padding insets
       :tabs [
                   (ui/tab 
                     :text "Shove Content"
@@ -43,11 +45,7 @@
 
                         :hgap 10
                         :vgap 10
-                          :padding (ui/insets
-                         :bottom 25
-                         :left 2
-                         :right 2
-                         :top 25)
+                          :padding insets
                           :children [
                         (ui/label
                     :text "Broker:"
