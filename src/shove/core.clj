@@ -25,30 +25,34 @@
 ;; we can use to construct these ui components, named "login-form"
 (defui LoginWindow
   (render [this {:keys [add-broker brokers]}]
-    (ui/grid-pane
+    (ui/tab-pane
       :alignment :center
       :hgap 10
       :vgap 10
       :padding (ui/insets
                  :bottom 25
-                 :left 25
-                 :right 25
+                 :left 2
+                 :right 2
                  :top 25)
-      :children [(ui/text
-                   :text "Shove"
-                   :font (ui/font
-                           :family "Tahoma"
-                           :weight :normal
-                           :size 20)
-                   :grid-pane/column-index 0
-                   :grid-pane/row-index 0
-                   :grid-pane/column-span 2
-                   :grid-pane/row-span 1)
+      :tabs [
+                  (ui/tab 
+                    :text "Shove Content"
+                    :closable false
+                    :content
+                        (ui/grid-pane
 
-                 (ui/label
-                   :text "Broker:"
-                   :grid-pane/column-index 0
-                   :grid-pane/row-index 1)
+                        :hgap 10
+                        :vgap 10
+                          :padding (ui/insets
+                         :bottom 25
+                         :left 2
+                         :right 2
+                         :top 25)
+                          :children [
+                        (ui/label
+                    :text "Broker:"
+                    :grid-pane/column-index 0
+                    :grid-pane/row-index 1)
 
                    
                    (if add-broker 
@@ -86,8 +90,9 @@
                                                  {:broker-field #{:value}}})
                                 ]
                      :grid-pane/column-index 1
-                     :grid-pane/row-index 1))
-
+                     :grid-pane/row-index 1)
+                     )
+                   
                  (ui/label :text "Topic: "
                    :grid-pane/column-index 0
                    :grid-pane/row-index 2)
@@ -117,13 +122,13 @@
                    :spacing 10
                    :alignment :bottom-right
                    :children [
-                        (ui/button :text "Import CSV"
-                          :on-action {:event :import-csv
-                                      :fn-fx/include {
-                                                      :broker-field #{:value}
-                                                      :fn-fx/event #{:target}
-                                                      :topic-field #{:text}
-                                                      }})
+                        ; (ui/button :text "Import CSV"
+                        ;   :on-action {:event :import-csv
+                        ;               :fn-fx/include {
+                        ;                               :broker-field #{:value}
+                        ;                               :fn-fx/event #{:target}
+                        ;                               :topic-field #{:text}
+                        ;                               }})
                               (controls/button :text "Submit"
                                 :on-action {:event :auth
                                             :fn-fx/include {:broker-field #{:value}
@@ -133,7 +138,7 @@
                    :grid-pane/column-index 1
                    :grid-pane/row-index 5)
 
-                 ])))
+                 ]))])))
 
 ;; Wrap our login form in a stage/scene, and create a "stage" function
 (defui Stage
