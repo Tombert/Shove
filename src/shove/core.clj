@@ -9,6 +9,7 @@
    [fn-fx.util :as util]
    [clojure.string :as str]
    [shove.kafkalib :as kafka]
+   [shove.zookeeper :as zookeeper]
    [clojure.java.io :as io]
   )
   (:import (javafx.stage FileChooser)
