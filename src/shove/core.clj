@@ -27,17 +27,7 @@
                  :left 2
                  :right 2
                  :top 2))
-;; The main login window component, notice the authed? parameter, this defines a function
-;; we can use to construct these ui components, named "login-form"
-(defui LoginWindow
-  (render [this {:keys [add-broker brokers]}]
-    (ui/tab-pane
-      :alignment :center
-      :hgap 10
-      :vgap 10
-      :padding insets
-      :tabs [
-                  (ui/tab 
+(defn shoveContentTab [brokers add-broker] (ui/tab 
                     :text "Shove Content"
                     :closable false
                     :content
@@ -136,7 +126,17 @@
                    :grid-pane/column-index 1
                    :grid-pane/row-index 5)
 
-                 ]))
+                 ])))
+;; The main login window component, notice the authed? parameter, this defines a function
+;; we can use to construct these ui components, named "login-form"
+(defui LoginWindow
+  (render [this {:keys [add-broker brokers]}]
+    (ui/tab-pane
+      :alignment :center
+      :hgap 10
+      :vgap 10
+      :padding insets
+      :tabs [   (shoveContentTab brokers add-broker)
                  (ui/tab 
                    :text "CSV"
                    :content 
