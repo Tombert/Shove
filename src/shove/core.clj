@@ -68,6 +68,7 @@
                                :id :broker-field
                                :items brokers
                                :grid-pane/column-index 1
+                               :on-action {:event :broker-selected :fn-fx/include {:broker-field #{:value}}}
                                :grid-pane/row-index 1)
                                 (ui/button :text "Add Broker"
                                   :on-action {:event :add-broker
@@ -223,6 +224,12 @@
                 (spit brokerfile brokerStr)             
              ))
 
+       :broker-selected (do (println "\n\n\n\n\n\n\n yo dawg\n\n\n\n\n\n" (str all-data))
+                 (let [
+                       {includes :fn-fx/includes} all-data
+                       {{bf :value} :broker-field} includes
+                       ] (println "Broker: " bf))
+                 )
        :import-csv
            (let [
                  {includes :fn-fx/includes}  all-data
