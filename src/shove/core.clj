@@ -38,7 +38,12 @@
                                    :fn-fx/include 
                                        {:zookeeper-field #{:value}}}
                                :grid-pane/row-index 1))
-
+(defn brokerComboxBox [brokers] 
+  (ui/combo-box 
+     :id :broker-field
+     :items brokers
+     :grid-pane/column-index 1
+     :grid-pane/row-index 2))
 (defn shoveContentTab [zookeepers topics brokers add-zookeeper] (ui/tab 
                     :text "Shove Content"
                     :closable false
@@ -90,11 +95,7 @@
                    :grid-pane/column-index 0
                    :grid-pane/row-index 2)
 
-                 (ui/combo-box 
-                   :id :broker-field
-                   :items brokers
-                   :grid-pane/column-index 1
-                   :grid-pane/row-index 2)
+                (brokerComboxBox brokers)
 
                  (ui/label :text "Topic: "
                    :grid-pane/column-index 0
