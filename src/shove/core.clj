@@ -13,12 +13,22 @@
 (def state (atom {:zookeepers [] :brokers [] :add-zookeeper false :topics []}))
 
 
-
+(def doneAddZookeeperButton 
+  (ui/button :text "Done"
+    :on-action 
+      {:event :done-add-zookeeper
+       :fn-fx/include {:new-zookeeper-field #{:text}}}))
 (def insets (ui/insets
                  :bottom 25
                  :left 2
                  :right 2
                  :top 2))
+(def newZookeperTextField (ui/text-field 
+                       :id :new-zookeeper-field
+                     
+                     ))
+
+
 (defn shoveContentTab [zookeepers topics brokers add-zookeeper] (ui/tab 
                     :text "Shove Content"
                     :closable false
@@ -39,13 +49,10 @@
                    (ui/h-box 
                      :spacing 10
                      :alignment :bottom-left
-                     :children [(ui/text-field 
-                       :id :new-zookeeper-field
-                     
-                     ) 
-                        (ui/button :text "Done"
-                          :on-action {:event :done-add-zookeeper
-                                      :fn-fx/include {:new-zookeeper-field #{:text}}})]
+                     :children [ 
+                     newZookeperTextField
+                     doneAddZookeeperButton
+                        ]
                      :grid-pane/column-index 1
                      :grid-pane/row-index 1
                      
@@ -61,7 +68,7 @@
                                :grid-pane/column-index 1
                                :on-action {:event :zookeepers-selected :fn-fx/include {:zookeeper-field #{:value}}}
                                :grid-pane/row-index 1)
-                                (ui/button :text "Add Zookeeper:"
+                                (ui/button :text "Add Zookeeper"
                                   :on-action {:event :add-zookeeper
                                               :fn-fx/include {}})
                                 
