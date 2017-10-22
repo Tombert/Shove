@@ -21,5 +21,6 @@ If you aren't interested in Clojure's build system, you can download the self-co
 ## Roadmap
 
 - ~~An option to import a CSV file to do a lot of batch-inserts.~~
-- Utilize Zookeeper to start mimicking the features of Kafka tool. 
+- ~~Utilize Zookeeper to start mimicking the features of Kafka tool.~~
+    - Start using Zookeeper's metadata to read from Kafka. 
 - A mechanism for basic ad-hoc transformations from one topic to another. 
