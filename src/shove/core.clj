@@ -4,24 +4,16 @@
    [fn-fx.diff :refer [component defui render]]
    [fn-fx.controls :as controls]
    [fn-fx.controls :as ui]
-   [clojure.data.json :as json]
-   [clojure.data.csv :as csv]   
-   [fn-fx.util :as util]
    [clojure.string :as str]
-   [shove.kafkalib :as kafka]
-   [shove.zookeeper :as zookeeper]
+   [shove.handlers :as handlers]
    [clojure.java.io :as io]
   )
-  (:import (javafx.stage FileChooser)
-           (javafx.scene.chart.XYChart)
-           (javafx.beans.property ReadOnlyObjectWrapper))
+  
   (:gen-class))
 
 (def state (atom {:zookeepers [] :brokers [] :add-zookeeper false :topics []}))
 
-(def homedir (System/getProperty "user.home"))
 
-(def zookeeperfile (str homedir "/.zookeeperlist.txt"))
 
 (def insets (ui/insets
                  :bottom 25
@@ -124,17 +116,14 @@
                    :alignment :bottom-right
                    :children [
                               (controls/button :text "Submit"
-                                :on-action {:event :auth
+                                :on-action {:event :submit
                                             :fn-fx/include {:zookeeper-field #{:value}
                                                             :content-field #{:text}
                                                             :key-field #{:text}
                                                             :topic-field #{:value}}})]
                    :grid-pane/column-index 1
-                   :grid-pane/row-index 5)
+                   :grid-pane/row-index 5)])))
 
-                 ])))
-;; The main login window component, notice the authed? parameter, this defines a function
-;; we can use to construct these ui components, named "login-form"
 (defui LoginWindow
   (render [this {:keys [add-zookeeper topics brokers zookeepers]}]
     (ui/tab-pane
@@ -178,107 +167,19 @@
                  :scene (ui/scene
                           :root (login-window args)))))
 
-(defn csv-data->maps [csv-data]
-  (map zipmap
-       (->> (first csv-data) ;; First row is the header
-            (map keyword) ;; Drop if you want string keys instead
-            repeat)
-	  (rest csv-data)))
 
-(defn sendMessage [broker topic k value]
-  (println "Stuff: " (str broker topic k value))
-  (let [
-        producer (kafka/create-producer broker)
-       ]
-    (try (kafka/send-to-producer producer topic k value) (catch Exception e (println "Caught Exception: " (.getMessage e))))
-    )
-  
-  )
+
 
 (defn handler-fn [{:keys [event] :as all-data}]
-     (case event
-       :done-add-zookeeper
-          (let [
-                {{{nbf :text} :new-zookeeper-field} :fn-fx/includes} all-data
-                {zookeepers :zookeepers} @state
-
-                sortedZookeepers (-> zookeepers
-                                 (conj nbf) 
-                                 distinct
-                                 sort)
-                finalZookeepers (filter (fn [x] (not= x "")) sortedZookeepers)
-                zookeeperStr (str/join "\n" finalZookeepers)
-               ] 
-            (swap! state assoc :add-zookeeper false :zookeepers finalZookeepers)
-            (spit zookeeperfile zookeeperStr))
-       :add-zookeeper (swap! state assoc :add-zookeeper true)
-       :delete-zookeeper
-           (do (println "Howdy" (str all-data))
-           (let [
-                 
-                    {{{nbf :value} :zookeeper-field} :fn-fx/includes} all-data
-                    {zookeepers :zookeepers} @state
-                    finalZookeepers (filter (fn [x] (println x) (not= x nbf)) zookeepers)
-                    zookeeperStr (str/join "\n" finalZookeepers)
-                 ]
-                (println "Thing" (str nbf))
-                (swap! state assoc :zookeepers finalZookeepers)
-                (spit zookeeperfile zookeeperStr)             
-             ))
-
-       :zookeepers-selected (do (println "\n\n\n\n\n\n\n yo dawg\n\n\n\n\n\n" (str all-data))
-                 (let [
-                       {includes :fn-fx/includes} all-data
-                       {{bf :value} :zookeeper-field} includes
-                       zk (zookeeper/createZookeeper bf)
-                       brokerids (zookeeper/getValues zk "/brokers/ids")
-                       jsonbrokers (map (fn [x] (zookeeper/getData zk (str "/brokers/ids/" x) )) brokerids)
-                       lbrokers (mapcat (fn [x] (let [{ep "endpoints"} (json/read-str x)] ep)) jsonbrokers)
-                       brokers (mapv (fn [x] (str/replace x #"PLAINTEXT://" "")) lbrokers)
-
-                       ;brokers (doall (fn [x] (zookeeper/getValues (str "/brokers/ids/" x))) brokerids)
-                       topics (mapv identity (zookeeper/getValues zk "/brokers/topics"))
-                       ] (println "\n\nbrokers: " (str topics)) 
-                    (swap! state assoc :brokers brokers :topics topics)
-                   )
-                 )
-       :import-csv
-           (let [
-                 {includes :fn-fx/includes}  all-data
-                 {{bf :value } :zookeeper-field {tf :text} :topic-field} includes
-                 window (.getWindow (.getScene (:target (:fn-fx/event includes))))
-                 dialog (doto (FileChooser.) (.setTitle "Import CSV"))
-                 file (util/run-and-wait (.showOpenDialog dialog window))
-                 data (with-open [reader (io/reader file)] (doall (csv/read-csv reader)))
-                 mdata (csv-data->maps data)
-                 jsonstuff (map #(json/write-str %1) mdata )
-
-                 ]
-                 (doall (map #(sendMessage bf tf (str (java.util.UUID/randomUUID)) %1) jsonstuff))
-
-             
-             
-                 
-             ) 
-           
-       :auth (let [
-                   ;; Extracts out the fields from the big object that JavaFX gives us
-                   ;; TODO: This is uglier than it should be, might break up to multiple lines
-                   {{{kf :text} :key-field {bf :value} :zookeeper-field {tf :text} :topic-field {cf :text} :content-field} :fn-fx/includes} all-data
-
-             ] 
-               (sendMessage bf tf kf cf) 
-               
-               
-                       (println "Unknown UI event" event all-data))))
+     ((get handlers/handlemap event) event all-data state))
 
 (defn -main []
-  (spit zookeeperfile "" :append true)
+  (spit handlers/zookeeperfile "" :append true)
   (let [;; Data State holds the business logic of our app
 
         ;; Grab the initial list of zookeepers
         zookeeperlist (->
-                       (slurp zookeeperfile)
+                       (slurp handlers/zookeeperfile)
                        (str/split #"\n")
                    )
 
