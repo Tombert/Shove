@@ -27,7 +27,17 @@
                        :id :new-zookeeper-field
                      
                      ))
-
+(defn zookeeperCombobox [zookeepers]
+  (ui/combo-box
+                               :id :zookeeper-field
+                               :items zookeepers
+                               :grid-pane/column-index 1
+                               :on-action 
+                                  {:event 
+                                   :zookeepers-selected 
+                                   :fn-fx/include 
+                                       {:zookeeper-field #{:value}}}
+                               :grid-pane/row-index 1))
 
 (defn shoveContentTab [zookeepers topics brokers add-zookeeper] (ui/tab 
                     :text "Shove Content"
@@ -62,12 +72,7 @@
                      :alignment :bottom-left
                      :children [
 
-                               (ui/combo-box
-                               :id :zookeeper-field
-                               :items zookeepers
-                               :grid-pane/column-index 1
-                               :on-action {:event :zookeepers-selected :fn-fx/include {:zookeeper-field #{:value}}}
-                               :grid-pane/row-index 1)
+                                (zookeeperCombobox zookeepers)
                                 (ui/button :text "Add Zookeeper"
                                   :on-action {:event :add-zookeeper
                                               :fn-fx/include {}})
