@@ -44,6 +44,13 @@
      :items brokers
      :grid-pane/column-index 1
      :grid-pane/row-index 2))
+
+(defn topicComboxBox [topics]
+ (ui/combo-box
+   :id :topic-field
+   :items topics
+   :grid-pane/column-index 1
+   :grid-pane/row-index 3))
 (defn shoveContentTab [zookeepers topics brokers add-zookeeper] (ui/tab 
                     :text "Shove Content"
                     :closable false
@@ -101,11 +108,7 @@
                    :grid-pane/column-index 0
                    :grid-pane/row-index 3)
 
-                 (ui/combo-box
-                   :id :topic-field
-                   :items topics
-                   :grid-pane/column-index 1
-                   :grid-pane/row-index 3)
+                 (topicComboxBox topics)
 
                  (ui/label :text "Key:"
                    :grid-pane/column-index 0
