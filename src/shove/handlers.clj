@@ -35,26 +35,26 @@
 
 (def zookeeperfile (str homedir "/.zookeeperlist.txt"))
 
-(def handlemap {
-  :done-add-zookeeper 
-      (fn [event all-data state]
-                        (let [
-                {{{nbf :text} :new-zookeeper-field} :fn-fx/includes} all-data
-                {zookeepers :zookeepers} @state
+(defn handleDoneAddZookeeper [event all-data state] 
+      (let [
+              {{{nbf :text} :new-zookeeper-field} :fn-fx/includes} all-data
+              {zookeepers :zookeepers} @state
 
-                sortedZookeepers (-> zookeepers
-                                 (conj nbf) 
-                                 distinct
-                                 sort)
-                finalZookeepers (filter (fn [x] (not= x "")) sortedZookeepers)
-                zookeeperStr (str/join "\n" finalZookeepers)
-               ] 
-            (swap! state assoc :add-zookeeper false :zookeepers finalZookeepers)
-            (spit zookeeperfile zookeeperStr)))
-    :add-zookeeper (fn [event all-data state] (swap! state assoc :add-zookeeper true))
- 
-    :zookeepers-selected 
-        (fn [event all-data state] (do (println "\n\n\n\n\n\n\n yo dawg\n\n\n\n\n\n" (str all-data))
+              sortedZookeepers (-> zookeepers
+                               (conj nbf) 
+                               distinct
+                               sort)
+              finalZookeepers (filter (fn [x] (not= x "")) sortedZookeepers)
+              zookeeperStr (str/join "\n" finalZookeepers)
+             ] 
+          (swap! state assoc :add-zookeeper false :zookeepers finalZookeepers)
+          (spit zookeeperfile zookeeperStr)))
+
+(defn handleAddZookeeper [event all-data state] 
+  (swap! state assoc :add-zookeeper true))
+
+(defn handleZookeepersSelected [event all-data state]
+  (do (println "\n\n\n\n\n\n\n yo dawg\n\n\n\n\n\n" (str all-data))
                  (let [
                        {includes :fn-fx/includes} all-data
                        {{bf :value} :zookeeper-field} includes
@@ -64,14 +64,12 @@
                        lbrokers (mapcat (fn [x] (let [{ep "endpoints"} (json/read-str x)] ep)) jsonbrokers)
                        brokers (mapv (fn [x] (str/replace x #"PLAINTEXT://" "")) lbrokers)
 
-                       ;brokers (doall (fn [x] (zookeeper/getValues (str "/brokers/ids/" x))) brokerids)
                        topics (mapv identity (zookeeper/getValues zk "/brokers/topics"))
                        ] (println "\n\nbrokers: " (str topics)) 
-                    (swap! state assoc :brokers brokers :topics topics)
-                   )))
-    :delete-zookeeper
-        (fn [event all-data state]
-           (do (println "Howdy" (str all-data))
+                    (swap! state assoc :brokers brokers :topics topics))))
+
+(defn handleDeleteZookeeper [event all-data state] 
+  (do (println "Howdy" (str all-data))
            (let [
                  
                     {{{nbf :value} :zookeeper-field} :fn-fx/includes} all-data
@@ -83,9 +81,9 @@
                 (swap! state assoc :zookeepers finalZookeepers)
                 (spit zookeeperfile zookeeperStr))))
 
-     :import-csv
-        (fn [event all-data state]
-           (let [
+
+(defn handleImportCsv [event all-data state]
+  (let [
                  {includes :fn-fx/includes}  all-data
                  {{bf :value } :zookeeper-field {tf :text} :topic-field} includes
                  window (.getWindow (.getScene (:target (:fn-fx/event includes))))
@@ -98,13 +96,22 @@
                  ]
                  (doall (map #(sendMessage bf tf (str (java.util.UUID/randomUUID)) %1) jsonstuff))))
 
-       :submit (fn [event all-data state] (let [
-                   ;; Extracts out the fields from the big object that JavaFX gives us
-                   ;; TODO: This is uglier than it should be, might break up to multiple lines
-                   {{{kf :text} :key-field {bf :value} :zookeeper-field {tf :text} :topic-field {cf :text} :content-field} :fn-fx/includes} all-data
 
-             ] 
-               (sendMessage bf tf kf cf)))
+
+
+(defn handleSubmit [event all-data state]
+  (let [
+         {{{kf :text} :key-field {bf :value} :zookeeper-field {tf :text} :topic-field {cf :text} :content-field} :fn-fx/includes} all-data
+       ] 
+       (sendMessage bf tf kf cf)))
+
+(def handlemap {
+  :done-add-zookeeper  handleDoneAddZookeeper
+  :add-zookeeper handleAddZookeeper
+  :zookeepers-selected handleZookeepersSelected
+  :delete-zookeeper handleDeleteZookeeper
+  :import-csv handleImportCsv
+  :submit handleSubmit
  })
 
 
