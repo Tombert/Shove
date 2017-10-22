@@ -138,7 +138,7 @@
                                                             :key-field #{:text}
                                                             :topic-field #{:value}}})]
                    :grid-pane/column-index 1
-                   :grid-pane/row-index 5)])))
+                   :grid-pane/row-index 6)])))
 
 (defui LoginWindow
   (render [this {:keys [add-zookeeper topics brokers zookeepers]}]
