@@ -152,23 +152,16 @@
                       (ui/grid-pane
                         :hgap 10
                         :vgap 10
-                          :padding (ui/insets
-                         :bottom 25
-                         :left 2
-                         :right 2
-                         :top 25)
-                         :children [
-                                     
-                        (ui/button :text "Import CSV"
-                          :on-action {:event :import-csv
-                                      :fn-fx/include {
-                                                      :broker-field #{:value}
-                                                      :fn-fx/event #{:target}
-                                                      :topic-field #{:value}
-                                     }})
-                                    ]
-                   
-                   ))
+                        :padding insets
+                        :children [
+                          (ui/button :text "Import CSV"
+                            :on-action 
+                            {:event :import-csv
+                              :fn-fx/include {
+                                :broker-field #{:value}
+                                :fn-fx/event #{:target}
+                                :topic-field #{:value}
+                            }})]))
 
 
 
