@@ -64,6 +64,9 @@
   [event all-data state] 
     (swap! state assoc :add-zookeeper true))
 
+
+
+
 (defn handleZookeepersSelected 
     "An event handler that grabs the zookeeper from the selected value of the combobox, and utilizes this to populate the brokers and topics" 
     [event all-data state]
@@ -79,7 +82,9 @@
 
        topics (mapv identity (zookeeper/getValues zk "/brokers/topics"))
              ]  
-        (swap! state assoc :brokers brokers :topics topics))))
+        (swap! state assoc :brokers brokers :topics topics) 
+        (zookeeper/closeZookeeper zk)
+         )))
 
 (defn handleDeleteZookeeper   
   "An event handler to delete from the state the selected zookeeper.  Also writes the new state to the disk for caching."

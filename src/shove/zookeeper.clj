@@ -13,11 +13,13 @@
       [
        watcher (reify Watcher (^void process [this ^WatchedEvent e] nil))
        zk (new ZooKeeper url 3000 watcher)
+       
       ] zk))
 
 (defn getValues [zk path]
   (.getChildren zk path false))
 
+(defn closeZookeeper [zk] (.close zk))
 (defn getData [zk path]
   (new String (.getData zk path false nil))
   )
