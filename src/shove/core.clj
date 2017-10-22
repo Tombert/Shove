@@ -17,7 +17,7 @@
            (javafx.beans.property ReadOnlyObjectWrapper))
   (:gen-class))
 
-(def state (atom {:zookeepers [] :add-zookeeper false}))
+(def state (atom {:zookeepers [] :brokers [] :add-zookeeper false :topics []}))
 
 (def homedir (System/getProperty "user.home"))
 
@@ -28,7 +28,7 @@
                  :left 2
                  :right 2
                  :top 2))
-(defn shoveContentTab [zookeepers add-zookeeper] (ui/tab 
+(defn shoveContentTab [zookeepers topics brokers add-zookeeper] (ui/tab 
                     :text "Shove Content"
                     :closable false
                     :content
@@ -83,31 +83,42 @@
                      :grid-pane/row-index 1)
                      )
                    
-                 (ui/label :text "Topic: "
+                 (ui/label :text "Broker: "
                    :grid-pane/column-index 0
                    :grid-pane/row-index 2)
 
-                 (ui/text-field
-                   :id :topic-field
+                 (ui/combo-box 
+                   :id :broker-field
+                   :items brokers
                    :grid-pane/column-index 1
                    :grid-pane/row-index 2)
 
-                 (ui/label :text "Key:"
+                 (ui/label :text "Topic: "
                    :grid-pane/column-index 0
                    :grid-pane/row-index 3)
+
+                 (ui/combo-box
+                   :id :topic-field
+                   :items topics
+                   :grid-pane/column-index 1
+                   :grid-pane/row-index 3)
+
+                 (ui/label :text "Key:"
+                   :grid-pane/column-index 0
+                   :grid-pane/row-index 4)
 
                  (ui/text-field
                    :id :key-field
                    :grid-pane/column-index 1
-                   :grid-pane/row-index 3)
+                   :grid-pane/row-index 4)
                  (ui/label :text "Content"
                    :grid-pane/column-index 0
-                   :grid-pane/row-index 4)
+                   :grid-pane/row-index 5)
 
                  (ui/text-area
                    :id :content-field
                    :grid-pane/column-index 1
-                   :grid-pane/row-index 4)
+                   :grid-pane/row-index 5)
                  (ui/h-box
                    :spacing 10
                    :alignment :bottom-right
@@ -117,7 +128,7 @@
                                             :fn-fx/include {:zookeeper-field #{:value}
                                                             :content-field #{:text}
                                                             :key-field #{:text}
-                                                            :topic-field #{:text}}})]
+                                                            :topic-field #{:value}}})]
                    :grid-pane/column-index 1
                    :grid-pane/row-index 5)
 
@@ -125,15 +136,13 @@
 ;; The main login window component, notice the authed? parameter, this defines a function
 ;; we can use to construct these ui components, named "login-form"
 (defui LoginWindow
-  (render [this {:keys [add-zookeeper zookeepers]}]
+  (render [this {:keys [add-zookeeper topics brokers zookeepers]}]
     (ui/tab-pane
-      :alignment :center
-      :hgap 10
-      :vgap 10
       :padding insets
-      :tabs [   (shoveContentTab zookeepers add-zookeeper)
+      :tabs [   (shoveContentTab zookeepers topics brokers add-zookeeper)
                  (ui/tab 
                    :text "CSV"
+                   :closable false
                    :content 
                       (ui/grid-pane
                         :hgap 10
@@ -221,7 +230,17 @@
                  (let [
                        {includes :fn-fx/includes} all-data
                        {{bf :value} :zookeeper-field} includes
-                       ] (println "Zookeeper: " bf))
+                       zk (zookeeper/createZookeeper bf)
+                       brokerids (zookeeper/getValues zk "/brokers/ids")
+                       jsonbrokers (map (fn [x] (zookeeper/getData zk (str "/brokers/ids/" x) )) brokerids)
+                       lbrokers (mapcat (fn [x] (let [{ep "endpoints"} (json/read-str x)] ep)) jsonbrokers)
+                       brokers (mapv (fn [x] (str/replace x #"PLAINTEXT://" "")) lbrokers)
+
+                       ;brokers (doall (fn [x] (zookeeper/getValues (str "/brokers/ids/" x))) brokerids)
+                       topics (mapv identity (zookeeper/getValues zk "/brokers/topics"))
+                       ] (println "\n\nbrokers: " (str topics)) 
+                    (swap! state assoc :brokers brokers :topics topics)
+                   )
                  )
        :import-csv
            (let [
