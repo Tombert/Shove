@@ -14,8 +14,9 @@
            (javafx.beans.property ReadOnlyObjectWrapper))
   (:gen-class))
 
-(defn sendMessage [broker topic k value]
-  (println "Stuff: " (str broker topic k value))
+(defn sendMessage 
+  "Sends a message to the Kafka broker and topic passed in." 
+  [broker topic k value]
   (let [
         producer (kafka/create-producer broker)
        ]
@@ -24,7 +25,9 @@
   
   )
 
-(defn csv-data->maps [csv-data]
+(defn csv-data->maps 
+  "A simple helper function to extract the first row of a CSV so that we may get the properties as keywords, which should (theoretically) be faster lookup time."
+  [csv-data]
   (map zipmap
        (->> (first csv-data) ;; First row is the header
             (map keyword) ;; Drop if you want string keys instead
@@ -35,7 +38,9 @@
 
 (def zookeeperfile (str homedir "/.zookeeperlist.txt"))
 
-(defn handleDoneAddZookeeper [event all-data state] 
+(defn handleDoneAddZookeeper 
+      "A handler invoked when the user has entered in the Zookeeper URL, which grabs the data out of the text box, adds it to the list of zookeepers, writes that list to a file for caching, and puts us back into the combobox state."
+      [event all-data state] 
       (let [
               {{{nbf :text} :new-zookeeper-field} :fn-fx/includes} all-data
               {zookeepers :zookeepers} @state
@@ -50,42 +55,49 @@
           (swap! state assoc :add-zookeeper false :zookeepers finalZookeepers)
           (spit zookeeperfile zookeeperStr)))
 
-(defn handleAddZookeeper [event all-data state] 
-  (swap! state assoc :add-zookeeper true))
+(defn handleAddZookeeper 
+  "A simple state transformer handler that sets the flag to get us into the add-zookeeper mode, so that we open up a text box and let the user type in a zookeeper" 
+  [event all-data state] 
+    (swap! state assoc :add-zookeeper true))
 
-(defn handleZookeepersSelected [event all-data state]
-  (do (println "\n\n\n\n\n\n\n yo dawg\n\n\n\n\n\n" (str all-data))
-                 (let [
-                       {includes :fn-fx/includes} all-data
-                       {{bf :value} :zookeeper-field} includes
-                       zk (zookeeper/createZookeeper bf)
-                       brokerids (zookeeper/getValues zk "/brokers/ids")
-                       jsonbrokers (map (fn [x] (zookeeper/getData zk (str "/brokers/ids/" x) )) brokerids)
-                       lbrokers (mapcat (fn [x] (let [{ep "endpoints"} (json/read-str x)] ep)) jsonbrokers)
-                       brokers (mapv (fn [x] (str/replace x #"PLAINTEXT://" "")) lbrokers)
+(defn handleZookeepersSelected 
+    "An event handler that grabs the zookeeper from the selected value of the combobox, and utilizes this to populate the brokers and topics" 
+    [event all-data state]
+    (do 
+       (let [
+         {includes :fn-fx/includes} all-data
+         {{bf :value} :zookeeper-field} includes
+         zk (zookeeper/createZookeeper bf)
+         brokerids (zookeeper/getValues zk "/brokers/ids")
+         jsonbrokers (map (fn [x] (zookeeper/getData zk (str "/brokers/ids/" x) )) brokerids)
+         lbrokers (mapcat (fn [x] (let [{ep "endpoints"} (json/read-str x)] ep)) jsonbrokers)
+         brokers (mapv (fn [x] (str/replace x #"PLAINTEXT://" "")) lbrokers)
 
-                       topics (mapv identity (zookeeper/getValues zk "/brokers/topics"))
-                       ] (println "\n\nbrokers: " (str topics)) 
-                    (swap! state assoc :brokers brokers :topics topics))))
+       topics (mapv identity (zookeeper/getValues zk "/brokers/topics"))
+             ]  
+        (swap! state assoc :brokers brokers :topics topics))))
 
-(defn handleDeleteZookeeper [event all-data state] 
-  (do (println "Howdy" (str all-data))
-           (let [
-                 
-                    {{{nbf :value} :zookeeper-field} :fn-fx/includes} all-data
-                    {zookeepers :zookeepers} @state
-                    finalZookeepers (filter (fn [x] (println x) (not= x nbf)) zookeepers)
-                    zookeeperStr (str/join "\n" finalZookeepers)
-                 ]
-                (println "Thing" (str nbf))
-                (swap! state assoc :zookeepers finalZookeepers)
-                (spit zookeeperfile zookeeperStr))))
+(defn handleDeleteZookeeper   
+  "An event handler to delete from the state the selected zookeeper.  Also writes the new state to the disk for caching."
+  [event all-data state] 
 
+  (do 
+     (let [
+              {{{nbf :value} :zookeeper-field} :fn-fx/includes} all-data
+              {zookeepers :zookeepers} @state
+              finalZookeepers (filter (fn [x] (println x) (not= x nbf)) zookeepers)
+              zookeeperStr (str/join "\n" finalZookeepers)
+           ]
+          (swap! state assoc :zookeepers finalZookeepers)
+          (spit zookeeperfile zookeeperStr))))
 
-(defn handleImportCsv [event all-data state]
+(defn handleImportCsv 
+  "An event handler that will prompt the user for a CSV file, and then send that over to Kafka based on the currently selected broker and topic. Need to change this to be fully triggered by the submit."
+  
+  [event all-data state]
   (let [
                  {includes :fn-fx/includes}  all-data
-                 {{bf :value } :zookeeper-field {tf :text} :topic-field} includes
+                 {{bf :value } :broker-field {tf :value} :topic-field} includes
                  window (.getWindow (.getScene (:target (:fn-fx/event includes))))
                  dialog (doto (FileChooser.) (.setTitle "Import CSV"))
                  file (util/run-and-wait (.showOpenDialog dialog window))
@@ -99,9 +111,11 @@
 
 
 
-(defn handleSubmit [event all-data state]
+(defn handleSubmit 
+  "Handler to send the current data in the broker, key, topic, and content fields to kafka."
+  [event all-data state]
   (let [
-         {{{kf :text} :key-field {bf :value} :zookeeper-field {tf :text} :topic-field {cf :text} :content-field} :fn-fx/includes} all-data
+         {{{kf :text} :key-field {bf :value} :broker-field {tf :value} :topic-field {cf :text} :content-field} :fn-fx/includes} all-data
        ] 
        (sendMessage bf tf kf cf)))
 

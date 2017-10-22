@@ -117,6 +117,7 @@
                               (controls/button :text "Submit"
                                 :on-action {:event :submit
                                             :fn-fx/include {:zookeeper-field #{:value}
+                                                            :broker-field #{:value}
                                                             :content-field #{:text}
                                                             :key-field #{:text}
                                                             :topic-field #{:value}}})]
@@ -145,9 +146,9 @@
                         (ui/button :text "Import CSV"
                           :on-action {:event :import-csv
                                       :fn-fx/include {
-                                                      :zookeeper-field #{:value}
+                                                      :broker-field #{:value}
                                                       :fn-fx/event #{:target}
-                                                      :topic-field #{:text}
+                                                      :topic-field #{:value}
                                      }})
                                     ]
                    
