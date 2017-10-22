@@ -17,18 +17,18 @@
            (javafx.beans.property ReadOnlyObjectWrapper))
   (:gen-class))
 
-(def state (atom {:brokers [] :add-broker false}))
+(def state (atom {:zookeepers [] :add-zookeeper false}))
 
 (def homedir (System/getProperty "user.home"))
 
-(def brokerfile (str homedir "/.brokerlist.txt"))
+(def zookeeperfile (str homedir "/.zookeeperlist.txt"))
 
 (def insets (ui/insets
                  :bottom 25
                  :left 2
                  :right 2
                  :top 2))
-(defn shoveContentTab [brokers add-broker] (ui/tab 
+(defn shoveContentTab [zookeepers add-zookeeper] (ui/tab 
                     :text "Shove Content"
                     :closable false
                     :content
@@ -39,22 +39,22 @@
                           :padding insets
                           :children [
                         (ui/label
-                    :text "Broker:"
+                    :text "Zookeeper:"
                     :grid-pane/column-index 0
                     :grid-pane/row-index 1)
 
                    
-                   (if add-broker 
+                   (if add-zookeeper
                    (ui/h-box 
                      :spacing 10
                      :alignment :bottom-left
                      :children [(ui/text-field 
-                       :id :new-broker-field
+                       :id :new-zookeeper-field
                      
                      ) 
                         (ui/button :text "Done"
-                          :on-action {:event :done-add-broker
-                                      :fn-fx/include {:new-broker-field #{:text}}})]
+                          :on-action {:event :done-add-zookeeper
+                                      :fn-fx/include {:new-zookeeper-field #{:text}}})]
                      :grid-pane/column-index 1
                      :grid-pane/row-index 1
                      
@@ -65,19 +65,19 @@
                      :children [
 
                                (ui/combo-box
-                               :id :broker-field
-                               :items brokers
+                               :id :zookeeper-field
+                               :items zookeepers
                                :grid-pane/column-index 1
-                               :on-action {:event :broker-selected :fn-fx/include {:broker-field #{:value}}}
+                               :on-action {:event :zookeepers-selected :fn-fx/include {:zookeeper-field #{:value}}}
                                :grid-pane/row-index 1)
-                                (ui/button :text "Add Broker"
-                                  :on-action {:event :add-broker
+                                (ui/button :text "Add Zookeeper:"
+                                  :on-action {:event :add-zookeeper
                                               :fn-fx/include {}})
                                 
-                                (ui/button :text "Delete Broker"
-                                  :on-action {:event :delete-broker
+                                (ui/button :text "Delete Zookeeper"
+                                  :on-action {:event :delete-zookeeper
                                               :fn-fx/include 
-                                                 {:broker-field #{:value}}})
+                                                 {:zookeeper-field #{:value}}})
                                 ]
                      :grid-pane/column-index 1
                      :grid-pane/row-index 1)
@@ -112,16 +112,9 @@
                    :spacing 10
                    :alignment :bottom-right
                    :children [
-                        ; (ui/button :text "Import CSV"
-                        ;   :on-action {:event :import-csv
-                        ;               :fn-fx/include {
-                        ;                               :broker-field #{:value}
-                        ;                               :fn-fx/event #{:target}
-                        ;                               :topic-field #{:text}
-                        ;                               }})
                               (controls/button :text "Submit"
                                 :on-action {:event :auth
-                                            :fn-fx/include {:broker-field #{:value}
+                                            :fn-fx/include {:zookeeper-field #{:value}
                                                             :content-field #{:text}
                                                             :key-field #{:text}
                                                             :topic-field #{:text}}})]
@@ -132,13 +125,13 @@
 ;; The main login window component, notice the authed? parameter, this defines a function
 ;; we can use to construct these ui components, named "login-form"
 (defui LoginWindow
-  (render [this {:keys [add-broker brokers]}]
+  (render [this {:keys [add-zookeeper zookeepers]}]
     (ui/tab-pane
       :alignment :center
       :hgap 10
       :vgap 10
       :padding insets
-      :tabs [   (shoveContentTab brokers add-broker)
+      :tabs [   (shoveContentTab zookeepers add-zookeeper)
                  (ui/tab 
                    :text "CSV"
                    :content 
@@ -155,7 +148,7 @@
                         (ui/button :text "Import CSV"
                           :on-action {:event :import-csv
                                       :fn-fx/include {
-                                                      :broker-field #{:value}
+                                                      :zookeeper-field #{:value}
                                                       :fn-fx/event #{:target}
                                                       :topic-field #{:text}
                                      }})
@@ -195,45 +188,45 @@
 
 (defn handler-fn [{:keys [event] :as all-data}]
      (case event
-       :done-add-broker 
+       :done-add-zookeeper
           (let [
-                {{{nbf :text} :new-broker-field} :fn-fx/includes} all-data
-                {brokers :brokers} @state
+                {{{nbf :text} :new-zookeeper-field} :fn-fx/includes} all-data
+                {zookeepers :zookeepers} @state
 
-                sortedBrokers (-> brokers 
+                sortedZookeepers (-> zookeepers
                                  (conj nbf) 
                                  distinct
                                  sort)
-                finalBrokers (filter (fn [x] (not= x "")) sortedBrokers )
-                brokerStr (str/join "\n" finalBrokers)
+                finalZookeepers (filter (fn [x] (not= x "")) sortedZookeepers)
+                zookeeperStr (str/join "\n" finalZookeepers)
                ] 
-            (swap! state assoc :add-broker false :brokers finalBrokers)
-            (spit brokerfile brokerStr))
-       :add-broker (swap! state assoc :add-broker true)
-       :delete-broker
+            (swap! state assoc :add-zookeeper false :zookeepers finalZookeepers)
+            (spit zookeeperfile zookeeperStr))
+       :add-zookeeper (swap! state assoc :add-zookeeper true)
+       :delete-zookeeper
            (do (println "Howdy" (str all-data))
            (let [
                  
-                    {{{nbf :value} :broker-field} :fn-fx/includes} all-data
-                    {brokers :brokers} @state
-                    finalBrokers (filter (fn [x] (println x) (not= x nbf)) brokers)
-                    brokerStr (str/join "\n" finalBrokers)
+                    {{{nbf :value} :zookeeper-field} :fn-fx/includes} all-data
+                    {zookeepers :zookeepers} @state
+                    finalZookeepers (filter (fn [x] (println x) (not= x nbf)) zookeepers)
+                    zookeeperStr (str/join "\n" finalZookeepers)
                  ]
                 (println "Thing" (str nbf))
-                (swap! state assoc :brokers finalBrokers)
-                (spit brokerfile brokerStr)             
+                (swap! state assoc :zookeepers finalZookeepers)
+                (spit zookeeperfile zookeeperStr)             
              ))
 
-       :broker-selected (do (println "\n\n\n\n\n\n\n yo dawg\n\n\n\n\n\n" (str all-data))
+       :zookeepers-selected (do (println "\n\n\n\n\n\n\n yo dawg\n\n\n\n\n\n" (str all-data))
                  (let [
                        {includes :fn-fx/includes} all-data
-                       {{bf :value} :broker-field} includes
-                       ] (println "Broker: " bf))
+                       {{bf :value} :zookeeper-field} includes
+                       ] (println "Zookeeper: " bf))
                  )
        :import-csv
            (let [
                  {includes :fn-fx/includes}  all-data
-                 {{bf :value } :broker-field {tf :text} :topic-field} includes
+                 {{bf :value } :zookeeper-field {tf :text} :topic-field} includes
                  window (.getWindow (.getScene (:target (:fn-fx/event includes))))
                  dialog (doto (FileChooser.) (.setTitle "Import CSV"))
                  file (util/run-and-wait (.showOpenDialog dialog window))
@@ -252,7 +245,7 @@
        :auth (let [
                    ;; Extracts out the fields from the big object that JavaFX gives us
                    ;; TODO: This is uglier than it should be, might break up to multiple lines
-                   {{{kf :text} :key-field {bf :value} :broker-field {tf :text} :topic-field {cf :text} :content-field} :fn-fx/includes} all-data
+                   {{{kf :text} :key-field {bf :value} :zookeeper-field {tf :text} :topic-field {cf :text} :content-field} :fn-fx/includes} all-data
 
              ] 
                (sendMessage bf tf kf cf) 
@@ -261,12 +254,12 @@
                        (println "Unknown UI event" event all-data))))
 
 (defn -main []
-  (spit brokerfile "" :append true)
+  (spit zookeeperfile "" :append true)
   (let [;; Data State holds the business logic of our app
 
-        ;; Grab the initial list of brokers
-        brokerlist (->
-                       (slurp brokerfile)
+        ;; Grab the initial list of zookeepers
+        zookeeperlist (->
+                       (slurp zookeeperfile)
                        (str/split #"\n")
                    )
 
@@ -282,5 +275,5 @@
                   (dom/update-app old-ui (stage @state))))))
 
     ;; Load up the state with the inital list of brokers
-    (swap! state assoc :brokers brokerlist)
+    (swap! state assoc :zookeepers zookeeperlist)
     ))
