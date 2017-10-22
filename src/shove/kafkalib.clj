@@ -22,7 +22,7 @@
   [producer topic kkey message]
   (let [data (KeyedMessage. topic kkey message)]
     (.send producer data)))
-
+(defn close-producer [producer] (.close producer))
 
 
 

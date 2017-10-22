@@ -20,7 +20,11 @@
   (let [
         producer (kafka/create-producer broker)
        ]
-    (try (kafka/send-to-producer producer topic k value) (catch Exception e (println "Caught Exception: " (.getMessage e))))
+    (try 
+      (do 
+        (kafka/send-to-producer producer topic k value) 
+        (kafka/close-producer producer)) 
+      (catch Exception e (println "Caught Exception: " (.getMessage e))))
     )
   
   )
