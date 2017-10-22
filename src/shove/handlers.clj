@@ -52,7 +52,7 @@
               finalZookeepers (filter (fn [x] (not= x "")) sortedZookeepers)
               zookeeperStr (str/join "\n" finalZookeepers)
              ] 
-          (swap! state assoc :add-zookeeper false :zookeepers finalZookeepers)
+          (swap! state assoc :add-zookeeper false :zookeepers finalZookeepers :brokers [] :topics [])
           (spit zookeeperfile zookeeperStr)))
 
 (defn handleAddZookeeper 
@@ -88,7 +88,7 @@
               finalZookeepers (filter (fn [x] (println x) (not= x nbf)) zookeepers)
               zookeeperStr (str/join "\n" finalZookeepers)
            ]
-          (swap! state assoc :zookeepers finalZookeepers)
+          (swap! state assoc :zookeepers finalZookeepers :topics [] :brokers [])
           (spit zookeeperfile zookeeperStr))))
 
 (defn handleImportCsv 
