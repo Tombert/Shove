@@ -182,28 +182,20 @@
                              :vgap 10
                              :padding insets 
                              :children [
+
+                             (ui/h-box 
+                               :spacing 10
+                               :alignment :bottom-left
+                               :children [ 
                                 (ui/table-view
                                   :editable false
                                   :columns 
                                       [
-                                       (table-column {:index 0 :name "Fart"})
-                                       (table-column {:index 0 :name "A"})]
-                                  :items  [["yo" "fart"] ["blah"]]
-                                  ;:items [(ui/table-row :data ["asdf"])]
-                                          
-                                          )
-
-                                        
-                                        ]
-                             
-                             )
-                  
-                  
-                  )
-
-
-
-])))
+                                       (table-column {:index 0 :name "Key"})
+                                       (table-column {:index 1 :name "Offset"})
+                                       (table-column {:index 2 :name "Value"})]
+                                  :items  [["yo" 1 "fart"] ["blah" 2 "asdf"]])
+                        ])]))])))
 
 ;; Wrap our login form in a stage/scene, and create a "stage" function
 (defui Stage
