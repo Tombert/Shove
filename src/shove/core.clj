@@ -8,6 +8,7 @@
    [shove.handlers :as handlers]
   )
   
+(:import (javafx.beans.property ReadOnlyObjectWrapper))
   (:gen-class))
 
 (def state (atom {:zookeepers [] :brokers [] :add-zookeeper false :topics []}))
@@ -140,12 +141,23 @@
                    :grid-pane/column-index 1
                    :grid-pane/row-index 6)])))
 
+(defn cell-value-factory [f]
+  (reify javafx.util.Callback
+    (call [this entity]
+      (ReadOnlyObjectWrapper. (f (.getValue entity))))))
+
+(defui TableColumn
+  (render [this {:keys [index name]}]
+          (controls/table-column
+           :text name
+           :cell-value-factory (cell-value-factory #(nth % index)))))
+
 (defui LoginWindow
   (render [this {:keys [add-zookeeper topics brokers zookeepers]}]
     (ui/tab-pane
       :padding insets
       :tabs [   (shoveContentTab zookeepers topics brokers add-zookeeper)
-                 (ui/tab 
+                (ui/tab 
                    :text "CSV"
                    :closable false
                    :content 
@@ -162,6 +174,32 @@
                                 :fn-fx/event #{:target}
                                 :topic-field #{:value}
                             }})]))
+                (ui/tab
+                  :text "Read Data"
+                  :closable false
+                  :content (ui/grid-pane 
+                             :hgap 10
+                             :vgap 10
+                             :padding insets 
+                             :children [
+                                (ui/table-view
+                                  :editable false
+                                  :columns 
+                                      [
+                                       (table-column {:index 0 :name "Fart"})
+                                       (table-column {:index 0 :name "A"})]
+                                  :items  [["yo" "fart"] ["blah"]]
+                                  ;:items [(ui/table-row :data ["asdf"])]
+                                          
+                                          )
+
+                                        
+                                        ]
+                             
+                             )
+                  
+                  
+                  )
 
 
 
