@@ -8,6 +8,7 @@
                  [org.apache.zookeeper/zookeeper "3.5.3-beta"]
                  [org.clojure/data.json "0.2.6"]
                  [org.clojure/data.csv "0.1.4"]
+                 [org.apache.kafka/kafka-clients "0.9.0.0"]
                  [org.apache.kafka/kafka_2.9.2 "0.8.1.1" :exclusions [javax.jms/jms
                                                                       com.sun.jdmk/jmxtools
                                                                       com.sun.jmx/jmxri]]

@@ -195,7 +195,20 @@
                                        (table-column {:index 1 :name "Offset"})
                                        (table-column {:index 2 :name "Value"})]
                                   :items  [["yo" 1 "fart"] ["blah" 2 "asdf"]])
-                        ])]))])))
+
+                             (ui/button 
+                               :text "Consume!" 
+                               :on-action 
+                                  {
+                                   :event :consume
+                                   :fn-fx/include 
+                                     { 
+                                       :broker-field #{:value}
+                                       :zookeeper-field #{:value}
+                                       :topic-field #{:value}}})
+                        ])
+                             
+                             ]))])))
 
 ;; Wrap our login form in a stage/scene, and create a "stage" function
 (defui Stage
@@ -234,5 +247,4 @@
                   (dom/update-app old-ui (stage @state))))))
 
     ;; Load up the state with the inital list of brokers
-    (swap! state assoc :zookeepers zookeeperlist)
-    ))
+    (swap! state assoc :zookeepers zookeeperlist)))

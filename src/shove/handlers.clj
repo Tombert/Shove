@@ -127,7 +127,15 @@
          {{{kf :text} :key-field {bf :value} :broker-field {tf :value} :topic-field {cf :text} :content-field} :fn-fx/includes} all-data
        ] 
        (sendMessage bf tf kf cf)))
-
+(defn handleConsume 
+  "Handles the consumption of " [event all-data state]
+  (let [
+        {{ {bf :value} :broker-field {tf :value} :topic-field {zf :value} :zookeeper-field} :fn-fx/includes} all-data
+       ]
+  (println (str "\n\n\n\n\n\n\n\n" tf "\n\n\n\n\n\n\n\n\n"))
+  (kafka/getMessages zf tf)
+  
+  ))
 (def handlemap {
   :done-add-zookeeper  handleDoneAddZookeeper
   :add-zookeeper handleAddZookeeper
@@ -135,6 +143,7 @@
   :delete-zookeeper handleDeleteZookeeper
   :import-csv handleImportCsv
   :submit handleSubmit
+  :consume handleConsume
  })
 
 

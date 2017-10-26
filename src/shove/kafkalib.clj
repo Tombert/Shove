@@ -1,5 +1,6 @@
 (ns shove.kafkalib
   (:import (kafka.consumer Consumer ConsumerConfig KafkaStream)
+           (org.apache.kafka.clients.consumer KafkaConsumer)
            (kafka.producer KeyedMessage ProducerConfig)
            (kafka.javaapi.producer Producer)
            (java.util Properties)
@@ -30,26 +31,29 @@
 
 (defn- create-consumer-config
   "Returns a configuration for a Kafka client."
-  []
+  [zk]
   (let [props (Properties.)]
+    (println "\n\n\n\n\n\nmade it to consumer-config")
     (doto props
-      (.put "zookeeper.connect" "127.0.0.1:2181")
-      (.put "group.id" "group1")
+      (.put "zookeeper.connect" zk)
+      (.put "group.id" (str (java.util.UUID/randomUUID)))
       (.put "zookeeper.session.timeout.ms" "400")
       (.put "zookeeper.sync.time.ms" "200")
       (.put "auto.commit.interval.ms" "1000"))
-    (ConsumerConfig. props)))
 
-(defn- consume-messages
+    (let [c (ConsumerConfig. props)] (println "\n\n\n\n\n\nmade it to consumer-config2") c)
+    ))
+
+(defn consume-messages
   "Continually consume messages from a Kafka topic and write message value to stdout."
   [stream thread-num]
   (let [it (.iterator ^KafkaStream stream)]
-    (println (str "Starting thread " thread-num))
+    (println (str "\n\n\n\n\nStarting thread " thread-num))
     (while (.hasNext it)
       (as-> (.next it) msg
             (KafkaMessage. (.topic msg) (.offset msg) (.partition msg) (.key msg) (.message msg))
-            (println (str "Received on thread " thread-num ": " (String. (:value-bytes msg))))))
-    (println (str "Stopping thread " thread-num))))
+            (println (str "\n\n\n\n\n\nReceived on thread " thread-num ": " (String. (:value-bytes msg))))))
+    (println (str "\n\n\n\n\n\n\nStopping thread " thread-num))))
 
 (defn- start-consumer-threads
   "Start a thread for each stream."
@@ -59,4 +63,42 @@
     (when (seq streams)
       (.submit thread-pool (cast Callable #(consume-messages (first streams) index)))
       (recur (rest streams) (inc index)))))
+
+
+
+; (defn getMessages [zk topic]
+;   (let 
+;     [
+;      consumer (Consumer/createJavaConsumerConnector (create-consumer-config zk))
+;      consumer-map (.createMessageStreams consumer {topic 1})
+;      ; kafka-streams (.get consumer-map topic)
+;      ; thread-pool (Executors/newFixedThreadPool 1)
+;     ]
+;     (println "\n\n\n\n Made it to getmessages")
+;     ; (.addShutdownHook (Runtime/getRuntime)
+;     ;   (Thread. #(do (.shutdown consumer)
+;     ;                 (.shutdown thread-pool))))
+;       ; (start-consumer-threads thread-pool kafka-streams)
+;     ))
+
+
+; Properties props = new Properties();
+; props.put("bootstrap.servers", "localhost:9092");
+; props.put("group.id", "consumer-tutorial");
+; props.put("key.deserializer", StringDeserializer.class.getName());
+; props.put("value.deserializer", StringDeserializer.class.getName());
+; KafkaConsumer<String, String> consumer = new KafkaConsumer<>(props); 
+
+(defn getMessages [broker topic]
+   (let [p (new Properties)]
+    (println "\n\n\n\n Getting messages\n\n\n")
+    (.put p "bootstrap.servers" broker) 
+    (.put p "group.id" "1234")
+    (let [consumer (new KafkaConsumer p)]
+      (.subscribe consumer (java.util.LinkedList [topic]))
+      (loop [count 0]
+       (let [record (.poll consumer 1000)] 
+            (println (str "\n\n\nRecord: " record))
+            (if (< count 100) (recur (+ 1 count))))))))
+
 
