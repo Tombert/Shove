@@ -78,7 +78,7 @@
          brokerids (zookeeper/getValues zk "/brokers/ids")
          jsonbrokers (map (fn [x] (zookeeper/getData zk (str "/brokers/ids/" x) )) brokerids)
          lbrokers (mapcat (fn [x] (let [{ep "endpoints"} (json/read-str x)] ep)) jsonbrokers)
-         brokers (mapv (fn [x] (str/replace x #"PLAINTEXT://" "")) lbrokers)
+         brokers (sort (mapv (fn [x] (str/replace x #"PLAINTEXT://" "")) lbrokers))
 
          topics  (sort (mapv identity (zookeeper/getValues zk "/brokers/topics")))
              ]  
