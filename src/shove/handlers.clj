@@ -80,7 +80,7 @@
          lbrokers (mapcat (fn [x] (let [{ep "endpoints"} (json/read-str x)] ep)) jsonbrokers)
          brokers (mapv (fn [x] (str/replace x #"PLAINTEXT://" "")) lbrokers)
 
-       topics (mapv identity (zookeeper/getValues zk "/brokers/topics"))
+         topics  (sort (mapv identity (zookeeper/getValues zk "/brokers/topics")))
              ]  
         (swap! state assoc :brokers brokers :topics topics) 
         (zookeeper/closeZookeeper zk)
