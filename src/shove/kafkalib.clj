@@ -90,15 +90,28 @@
 ; KafkaConsumer<String, String> consumer = new KafkaConsumer<>(props); 
 
 (defn getMessages [broker topic]
-   (let [p (new Properties)]
-    (println "\n\n\n\n Getting messages\n\n\n")
+   (let [p (Properties.)]
+    (println "\n\n\n\n Getting messages\n\n\n" (str (type  p)))
     (.put p "bootstrap.servers" broker) 
-    (.put p "group.id" "1234")
-    (let [consumer (new KafkaConsumer p)]
-      (.subscribe consumer (java.util.LinkedList [topic]))
+    (.put p "group.id" "test")
+    (.put p "key.deserializer" "org.apache.kafka.common.serialization.StringDeserializer")
+    (.put p "value.deserializer" "org.apache.kafka.common.serialization.StringDeserializer")
+    (println (str "\n\n\nOutside second let." broker topic))
+    (let [consumer (KafkaConsumer. p)
+          ll (java.util.Arrays/asList (into-array [topic]))]
+        (try 
       (loop [count 0]
-       (let [record (.poll consumer 1000)] 
-            (println (str "\n\n\nRecord: " record))
-            (if (< count 100) (recur (+ 1 count))))))))
+        (println (str "yo" ll))
+        (.subscribe consumer ll)
+        (let [records (.poll consumer 10000)]
+            (println (str "\n\n\n\n\n\n\n\n\n\n\n\nRecord: \n\n\n\n\n\n\n\n\n" (.count records)))
+           (doseq [rec records]
+              (println (str "Square of " (.value rec))))
+            ;(map (fn [x] (println (str "Real record" (.value x)))) (seq records))
+            )
+        (if (< count 100) (recur (+ 0 count)))
+        )
+       (catch Exception e (println (str "Exception yo: " e)))
+      ))))
 
 

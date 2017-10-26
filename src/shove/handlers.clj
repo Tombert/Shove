@@ -83,8 +83,7 @@
          topics  (sort (mapv identity (zookeeper/getValues zk "/brokers/topics")))
              ]  
         (swap! state assoc :brokers brokers :topics topics) 
-        (zookeeper/closeZookeeper zk)
-         )))
+        (zookeeper/closeZookeeper zk))))
 
 (defn handleDeleteZookeeper   
   "An event handler to delete from the state the selected zookeeper.  Also writes the new state to the disk for caching."
@@ -133,7 +132,7 @@
         {{ {bf :value} :broker-field {tf :value} :topic-field {zf :value} :zookeeper-field} :fn-fx/includes} all-data
        ]
   (println (str "\n\n\n\n\n\n\n\n" tf "\n\n\n\n\n\n\n\n\n"))
-  (kafka/getMessages zf tf)
+  (kafka/getMessages bf tf)
   
   ))
 (def handlemap {
